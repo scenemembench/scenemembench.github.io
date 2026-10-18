@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Explore scene memory through observation, exploration and revisit. SceneMemBench: A Benchmark for Scene Memory in Interactive Video World Models.">
+  <title>SceneMemBench — A Benchmark for Scene Memory in Interactive Video World Models</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%23133e39'/%3E%3Cpath d='M11 27V13h18v14H11m0-7h18M20 13v14' stroke='%23f6f3e9' fill='none' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="canonical" href="https://scenemembench.github.io/">
+  <meta property="og:title" content="SceneMemBench">
+  <meta property="og:description" content="A Benchmark for Scene Memory in Interactive Video World Models">
+  <meta property="og:url" content="https://scenemembench.github.io/">
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+<header class="nav"><a class="wordmark" href="#"><span class="brand-icon" aria-hidden="true">▣</span> SceneMemBench<span class="wordmark-dot">.</span></a><nav aria-label="Main navigation"><a href="#explore">Explore</a><a href="#compare">Compare models</a><a href="#about">Benchmark</a><a class="code-link" href="https://github.com/Seeyou-Hi/SceneMemBench/tree/release/initial-open-source" target="_blank" rel="noopener">Code ↗</a></nav></header>
+<main>
+  <section class="hero">
+    <div class="eyebrow"><span class="live-dot"></span> SCENE MEMORY IN VIDEO WORLD MODELS</div>
+    <h1>A world worth<br><em>remembering.</em></h1>
+    <p class="paper-title">A Benchmark for Scene Memory in Interactive Video World Models</p>
+    <p class="intro">Look around. Explore somewhere new. Return.<br>Does the world still remember what you saw?</p>
+    <a class="hero-cta" href="#explore">Explore the benchmark <span>↓</span></a>
+    <div class="hero-note">Two memory tasks <i>·</i> Four ways to revisit <i>·</i> Shared observation history</div>
+  </section>
+
+  <section id="explore" class="explore section-wrap">
+    <div class="section-top"><div><div class="eyebrow">01 / THE MEMORY TEST</div><h2>Out of sight. <em>Still in the world?</em></h2></div><p>Follow a real camera route.<br>See what changes when the scene returns.</p></div>
+    <div id="case-tabs" class="case-tabs" role="group" aria-label="Choose a revisit type"></div>
+    <div class="scene-shell">
+      <div class="scene-stage" id="scene-stage">
+        <video id="scene-video" muted playsinline preload="metadata" aria-label="Ground-truth scene trajectory"></video>
+        <svg id="landmark-overlay" class="landmark-overlay" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><polygon id="landmark-polygon"/></svg>
+        <svg id="atlas-stage" class="atlas-stage" role="img" aria-label="Greek Island atlas with interactive camera trajectory"></svg><div class="stage-shade"></div><div class="view-switch" role="group" aria-label="Scene view"><button id="view-atlas" aria-pressed="true">Atlas</button><button id="view-first-person" aria-pressed="false">First person</button></div><div class="live-view"><span>CURRENT CAMERA VIEW</span><video id="camera-preview" muted playsinline preload="metadata"></video></div>
+        <div class="scene-topline"><span class="scene-label"><span class="live-dot"></span> GREEK ISLAND <span class="scene-label-separator">/</span> <span id="task-label">Novel view</span></span><span class="gt-label">Ground-truth scene</span></div>
+        <div class="memory-cards">
+          <button class="memory-card" data-event="observe"><span class="card-kicker">01 / OBSERVE</span><img id="observe-image" alt="Previously observed view"/><span class="card-copy">A view to remember<span id="observe-time"></span></span></button>
+          <button class="memory-card" data-event="explore"><span class="card-kicker">02 / EXPLORE</span><img id="explore-image" alt="Scene during exploration"/><span class="card-copy">Elsewhere in the scene<span id="explore-time"></span></span></button>
+        </div>
+        <div class="stage-story"><span id="stage-phase" class="phase-pill">OBSERVATION HISTORY</span><h3 id="stage-headline">A new viewpoint.<br>A familiar scene.</h3><p id="stage-description"></p><button class="small-link" id="jump-revisit">Jump to the revisit ↗</button></div>
+        <div class="path-card"><div class="path-card-header"><span>CAMERA ROUTE</span><span>Top view · UE poses</span></div><svg id="route-map" viewBox="0 0 300 180" role="img" aria-label="Top-down camera position and viewing direction"><defs><pattern id="map-grid" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="0.65" fill="#becdc5"/></pattern></defs><rect width="300" height="180" fill="url(#map-grid)"/><g id="map-geometry"></g><g id="map-camera"></g></svg><div class="path-legend"><span><i class="legend-line context"></i> Context</span><span><i class="legend-line query"></i> Query</span><span id="path-motion"></span></div></div>
+        <button id="focus-toggle" title="Source landmark bounds projected into the camera view" class="focus-toggle" aria-pressed="false" hidden>Highlight landmark</button>
+      </div>
+      <div class="story-controls"><button id="scene-play" class="play-button" aria-label="Play trajectory">▶</button><span id="scene-time" class="timecode">00:00</span><div class="timeline-wrap"><div class="timeline-phases"><span id="context-phase">Observation history</span><span>Revisit / Query</span></div><input id="scene-scrub" type="range" min="0" max="100" value="0" step="0.01" aria-label="Scrub scene trajectory"><div class="timeline-markers" id="timeline-markers"></div></div><span id="scene-duration" class="timecode">00:29</span><select id="scene-speed" aria-label="Scene playback speed"><option value="1">1×</option><option value="0.5">0.5×</option><option value="2">2×</option></select></div>
+      <div class="event-strip"><button data-event="observe"><span class="event-number">01</span><span><b>Observe</b><small>Build a shared scene history</small></span><span class="event-arrow">↗</span></button><button data-event="explore"><span class="event-number">02</span><span><b>Explore</b><small>Turn or move elsewhere</small></span><span class="event-arrow">↗</span></button><button data-event="revisit"><span class="event-number">03</span><span><b>Revisit</b><small>Recover a seen or novel view</small></span><span class="event-arrow">↗</span></button></div>
+    </div>
+    <div class="case-footnote"><span id="case-description"></span><span>Real scene references · interactive trajectory explorer</span></div>
+  </section>
+
+  <section id="compare" class="compare section-wrap">
+    <div class="section-top"><div><div class="eyebrow">02 / SAME HISTORY, DIFFERENT WORLDS</div><h2>What does each model <em>remember?</em></h2></div><p>One shared Context. Six native continuations.<br>Inspect the revisit, side by side.</p></div>
+    <div class="comparison-toolbar"><div><span class="protocol-badge">CONTINUED ROLLOUT</span><span>Reversed Rotation <span class="subtle">/ Greek Island</span></span></div><div class="comparison-actions"><label><input id="endpoint-mode" type="checkbox">Endpoint comparison</label><button id="compare-play" class="button-dark">▶ Play both</button></div></div>
+    <div class="comparison-grid"><article class="model-panel"><div class="model-panel-head"><span class="model-letter">A</span><label class="sr-only" for="model-a">First model</label><select id="model-a"></select><span class="native-fps" id="fps-a"></span></div><div class="model-media"><video id="video-a" muted playsinline preload="metadata" aria-label="First model continuation"></video><img id="endpoint-a" alt="First model generated endpoint" hidden></div><div class="model-panel-bottom"><span>Generated Query</span><span id="endpoint-label-a"></span></div><div class="reference-panel" id="reference-panel-a" hidden><img id="reference-a" alt="First model selected ground-truth reference"><span id="reference-label-a"></span></div></article><article class="model-panel"><div class="model-panel-head"><span class="model-letter">B</span><label class="sr-only" for="model-b">Second model</label><select id="model-b"></select><span class="native-fps" id="fps-b"></span></div><div class="model-media"><video id="video-b" muted playsinline preload="metadata" aria-label="Second model continuation"></video><img id="endpoint-b" alt="Second model generated endpoint" hidden></div><div class="model-panel-bottom"><span>Generated Query</span><span id="endpoint-label-b"></span></div><div class="reference-panel" id="reference-panel-b" hidden><img id="reference-b" alt="Second model selected ground-truth reference"><span id="reference-label-b"></span></div></article></div>
+    <div class="comparison-seek"><span class="timecode" id="compare-time">0.00 s</span><input type="range" id="compare-scrub" min="0" max="3.5" step="0.01" value="0" aria-label="Shared Query elapsed time"><span class="timecode" id="compare-duration">3.50 s</span></div>
+    <p class="comparison-note" id="comparison-note">Playback follows elapsed Query time at each model’s native FPS. Matching playback time does not imply identical camera poses.</p>
+    <div class="comparison-context"><span class="context-label">SHARED INPUT</span><img id="shared-context" alt="Observed frame from the shared Context"><p>Every model receives the same observation history.<br><span>The comparison above shows generated continuation only.</span></p><a href="#explore" id="view-comparison-case">Explore this route ↗</a></div>
+  </section>
+
+  <section id="about" class="about section-wrap"><div class="eyebrow">03 / A BENCHMARK FOR SCENE MEMORY</div><div class="about-layout"><h2>Remember the scene.<br><em>Across the change of view.</em></h2><div class="about-copy"><p>SceneMemBench studies whether interactive video world models recover previously observed scene content after it leaves the view.</p><div class="task-row"><span>01</span><div><h3>Return to a Seen View</h3><p>Revisit a camera view present in the observation history.</p><small>Reversed Rotation / Full Rotation</small></div></div><div class="task-row"><span>02</span><div><h3>Return to a Novel View</h3><p>Recover familiar scene content from a new camera viewpoint.</p><small>Forward and Look Back / New-Viewpoint Revisit</small></div></div></div></div></section>
+  <footer class="section-wrap"><a class="wordmark" href="#">SceneMemBench<span class="wordmark-dot">.</span></a><p>SceneMemBench · Interactive scene memory benchmark</p><a href="https://github.com/Seeyou-Hi/SceneMemBench/tree/release/initial-open-source" target="_blank" rel="noopener">Explore the code ↗</a></footer>
+</main>
+<div id="status-message" role="status" aria-live="polite"></div>
+</body>
+</html>
