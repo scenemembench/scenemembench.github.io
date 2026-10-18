@@ -1293,3 +1293,49 @@ footer>a:last-child {
  .atlas-mode .stage-story .small-link {font-size:9px;}
  .atlas-mode .live-view {bottom:28px;width:150px;}
 }
+/* Project masthead: real benchmark imagery, continuously drifting in four rows. */
+.nav {background:#101d20;color:#f5f2e9;border-bottom:1px solid #ffffff12;}
+.nav .code-link {border-color:#ffffff45;}
+.hero {position:relative;isolation:isolate;overflow:hidden;min-height:760px;min-height:min(880px,calc(100svh - 80px));display:flex;align-items:center;justify-content:center;padding:100px 28px 110px;background:#112025;color:#faf8ed;}
+.scene-wall {position:absolute;z-index:-3;inset:-170px -180px;display:flex;flex-direction:column;justify-content:center;gap:18px;transform:rotate(-8deg);pointer-events:none;}
+.wall-track {display:flex;gap:18px;width:max-content;animation:wall-drift 155s linear infinite;will-change:transform;}
+.wall-track-1 {animation-direction:reverse;animation-duration:170s;}
+.wall-track-2 {animation-duration:190s;}
+.wall-track-3 {animation-direction:reverse;animation-duration:180s;}
+.wall-group {display:flex;gap:18px;flex-shrink:0;}
+.wall-card {position:relative;flex:0 0 310px;width:310px;height:184px;margin:0;border-radius:14px;overflow:hidden;background:#293e41;box-shadow:0 0 0 1px #ffffff15;}
+.wall-card img {display:block;width:100%;height:100%;object-fit:cover;}
+.wall-card figcaption {position:absolute;inset:auto 0 0;padding:16px 12px 9px;background:linear-gradient(transparent,#082227a6);font-size:10px;text-align:left;color:#fff;}
+.wall-card figcaption span {float:right;font-size:8px;opacity:.75;}
+.hero-veil {position:absolute;z-index:-2;inset:0;background:linear-gradient(180deg,#0a171d44,#0a171d55 20%,#0a171d77 68%,#0a171dbb),radial-gradient(ellipse at center,#07171d22 0%,#07171d44 75%);}
+.hero-content {width:100%;max-width:1600px;}
+.hero .eyebrow {display:inline-flex;justify-content:center;padding:12px 20px;border:1px solid #6ec1ad70;border-radius:30px;background:#163e3860;color:#b8e5d7;font-size:11px;letter-spacing:2.5px;backdrop-filter:blur(8px);}
+.hero h1 {font-family:var(--sans);font-size:clamp(64px,11.5vw,180px);font-weight:800;letter-spacing:-.07em;line-height:1.08;margin:36px 0 24px;color:#faf8ed;text-shadow:0 6px 35px #07171d30;white-space:nowrap;}
+.hero h1 span {color:#e5b251;}
+.hero .paper-title {font-family:var(--serif);font-style:italic;font-size:clamp(21px,2.6vw,37px);line-height:1.3;max-width:1000px;margin:0 auto 26px;color:#f3eee0;text-wrap:balance;}
+.hero .intro {color:#e1e7df;font-size:15px;text-shadow:0 2px 8px #122b26;}
+.hero-actions {display:flex;gap:14px;justify-content:center;margin:30px 0 26px;}
+.hero .hero-cta,.hero-code {display:inline-flex;align-items:center;justify-content:center;gap:20px;min-height:52px;padding:14px 24px;border:1px solid #ffffff75;border-radius:9px;font-size:14px;background:#eff1e31c;backdrop-filter:blur(16px);color:#fff;}
+.hero .hero-cta {background:#f5f1e7;color:#183c36;border-color:#f5f1e7;}
+.hero-actions a:hover {transform:translateY(-2px);box-shadow:0 5px 20px #081c2650;}
+.hero .hero-note {color:#d1d9cf;font-size:11px;letter-spacing:.6px;}
+.hero-mobile-break {display:none;}
+.wall-motion {position:absolute;bottom:22px;right:28px;display:block;color:#e6e9df;background:#152c3280;border:1px solid #ffffff40;border-radius:6px;padding:8px 12px;font-size:10px;backdrop-filter:blur(8px);}
+.hero.motion-paused .wall-track {animation-play-state:paused;}
+@keyframes wall-drift {from {transform:translateX(0);}to {transform:translateX(calc(-50% - 9px));}}
+@media(prefers-reduced-motion:reduce) {.wall-track {animation:none;}html {scroll-behavior:auto;}}
+@media(max-width:700px) {
+ .nav {height:65px;padding:0 16px;}.nav .wordmark {font-size:18px;}
+ .hero {min-height:720px;min-height:calc(100svh - 65px);padding:90px 16px 95px;}
+ .hero h1 {font-size:clamp(42px,11.3vw,78px);letter-spacing:-.07em;margin:30px 0 24px;}
+ .hero .eyebrow {font-size:8px;letter-spacing:1.3px;padding:10px 13px;}
+ .hero .paper-title {font-size:23px;max-width:500px;}
+ .hero-mobile-break {display:block;}
+ .hero .intro {font-size:12px;line-height:1.7;}
+ .hero .hero-cta,.hero-code {font-size:11px;padding:12px 16px;gap:12px;min-height:46px;}
+ .hero .hero-note {font-size:8px;letter-spacing:.2px;}
+ .wall-card {width:245px;flex-basis:245px;height:154px;border-radius:10px;}
+ .scene-wall {inset:-90px -180px;gap:12px;transform:rotate(-12deg);}
+ .wall-track,.wall-group {gap:12px;}
+ .wall-motion {font-size:8px;right:16px;bottom:18px;}
+}

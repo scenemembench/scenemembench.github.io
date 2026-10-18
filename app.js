@@ -186,3 +186,20 @@ async function init() {
   requestAnimationFrame(tick);
 }
 init();
+const motionButton = $('wall-motion');
+if (motionButton) {
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  if (reducedMotion.matches) {
+    document.querySelector('.hero').classList.add('motion-paused');
+    motionButton.setAttribute('aria-pressed', 'true');
+    motionButton.textContent = 'Reduced motion';
+    motionButton.disabled = true;
+  }
+  motionButton.addEventListener('click', () => {
+    const paused = motionButton.getAttribute('aria-pressed') !== 'true';
+    document.querySelector('.hero').classList.toggle('motion-paused', paused);
+    motionButton.setAttribute('aria-pressed', String(paused));
+    motionButton.textContent = paused ? '▶ Play background' : 'Ⅱ Pause background';
+    motionButton.setAttribute('aria-label', paused ? 'Play background animation' : 'Pause background animation');
+  });
+}
