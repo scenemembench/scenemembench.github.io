@@ -341,12 +341,11 @@ h1 em {
   color:var(--muted);
 }
 .stage-story {
-  position:absolute;
-  bottom:38px;
-  left:28px;
-  color:#fff;
-  max-width:460px;
-  z-index:2;
+  position:static;
+  padding:22px 24px;
+  color:var(--ink);
+  background:var(--paper);
+  max-width:none;
 }
 .phase-pill {
   font-size:8px;

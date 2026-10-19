@@ -2,7 +2,6 @@ const $ = (id) => document.getElementById(id);
 const NS = 'http://www.w3.org/2000/svg';
 const state = {data: null, current: null, comparisonPlaying: false, comparisonTime: 0, comparisonStartedAt: 0, lastUpdate: 0};
 const scene = $('scene-video');
-$('scene-stage').insertAdjacentElement('afterend', document.querySelector('.stage-story'));
 const videos = [$('video-a'), $('video-b')];
 let statusTimer;
 function notify(message) { $('status-message').textContent = message; clearTimeout(statusTimer); statusTimer = setTimeout(() => $('status-message').textContent = '', 6500); }
