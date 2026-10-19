@@ -96,3 +96,75 @@ button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible {o
  .hero-note i {padding:0 5px;}
  .case-tab {padding:12px 14px;}
 }
+/* Readable supporting type across the research explorer. */
+.nav nav {font-size:15px;}
+.eyebrow {font-size:12px;}
+.hero .eyebrow {font-size:12px;}
+.hero .intro {font-size:17px;}
+.hero .hero-note {font-size:13px;}
+.wall-card figcaption {font-size:11px;}
+.wall-card figcaption span {font-size:10px;}
+.wall-motion {font-size:12px;}
+.section-top>p {font-size:15px;}
+.case-tab {font-size:13px;}
+.case-tab .tab-index {font-size:12px;}
+.scene-label,.gt-label {font-size:11px;}
+.card-kicker {font-size:10px;}
+.card-copy {font-size:12px;flex-wrap:wrap;}
+.card-copy>span {font-size:11px;}
+.phase-pill {font-size:10px;}
+.stage-story p {font-size:14px;}
+.small-link {font-size:12px;}
+.path-card-header,.path-card-header>span+span,.path-legend,.path-legend>span:last-child {font-size:10px;}
+.live-view span {font-size:11px;}
+.view-switch button,.focus-toggle {font-size:12px;}
+.timecode,.story-controls select {font-size:12px;}
+.timeline-phases {font-size:10px;}
+.event-strip button b {font-size:14px;}
+.event-strip button small {font-size:12px;}
+.case-footnote {font-size:12px;}
+.comparison-toolbar {font-size:13px;}
+.protocol-badge {font-size:10px;}
+.comparison-actions label,.button-dark {font-size:12px;}
+.model-panel select {font-size:15px;}
+.model-letter,.native-fps {font-size:11px;}
+.model-panel-bottom,.reference-panel>span {font-size:12px;}
+.comparison-note {font-size:13px;}
+.context-label {font-size:10px;}
+.comparison-context p {font-size:14px;}
+.comparison-context p span,.comparison-context a {font-size:12px;}
+.about-copy>p {font-size:16px;}
+.task-row h3 {font-size:17px;}
+.task-row p {font-size:14px;}
+.task-row small,.task-row>span {font-size:12px;}
+footer p,footer>a:last-child {font-size:12px;}
+@media(max-width:700px) {
+ .hero .eyebrow {font-size:10px;}
+ .hero .intro {font-size:14px;}
+ .hero .hero-note {font-size:10px;line-height:1.8;max-width:100%;}
+ .hero .hero-cta,.hero-code {font-size:13px;}
+ .wall-motion {font-size:10px;}
+ .section-top>p {font-size:14px;}
+ .case-tab {font-size:12px;}
+ .scene-label,.gt-label {font-size:9px;}
+ .card-kicker {font-size:9px;}
+ .card-copy {font-size:11px;}
+ .card-copy>span {font-size:10px;}
+ .live-view span {font-size:9px;}
+ .view-switch button {font-size:11px;}
+ .phase-pill {font-size:9px;}
+ .atlas-mode .stage-story .small-link {font-size:11px;}
+ .timecode,.story-controls select {font-size:11px;}
+ .timeline-phases {font-size:9px;}
+ .story-controls {gap:9px;padding-left:12px;padding-right:12px;}
+ .event-strip button b {font-size:12px;}
+ .event-strip button small {font-size:10px;line-height:1.5;}
+ .case-footnote {font-size:11px;}
+ .comparison-toolbar {font-size:12px;}
+ .comparison-actions label,.button-dark {font-size:12px;}
+ .model-panel-bottom {font-size:11px;flex-wrap:wrap;}
+ .comparison-note {font-size:12px;}
+ .comparison-context p {font-size:12px;}
+ .comparison-context p span,.comparison-context a {font-size:11px;}
+ footer p,footer>a:last-child {font-size:11px;}
+}
