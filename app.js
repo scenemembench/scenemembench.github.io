@@ -2,6 +2,7 @@ const $ = (id) => document.getElementById(id);
 const NS = 'http://www.w3.org/2000/svg';
 const state = {data: null, current: null, comparisonPlaying: false, comparisonTime: 0, comparisonStartedAt: 0, lastUpdate: 0};
 const scene = $('scene-video');
+$('scene-stage').insertAdjacentElement('afterend', document.querySelector('.stage-story'));
 const videos = [$('video-a'), $('video-b')];
 let statusTimer;
 function notify(message) { $('status-message').textContent = message; clearTimeout(statusTimer); statusTimer = setTimeout(() => $('status-message').textContent = '', 6500); }
@@ -27,9 +28,7 @@ function selectCase(id) {
   scene.pause(); state.current = c; $('scene-play').textContent = '▶'; $('scene-play').setAttribute('aria-label', 'Play trajectory');
   for (const button of document.querySelectorAll('.case-tab')) button.setAttribute('aria-pressed', String(button.dataset.id === id));
   $('task-label').textContent = c.task;
-  const [firstLine, ...remaining] = c.headline.split('. ');
-  $('stage-headline').textContent = firstLine + (remaining.length ? '.' : '');
-  if (remaining.length) $('stage-headline').append(document.createElement('br'), document.createTextNode(remaining.join('. ')));
+  $('stage-headline').textContent = c.headline;
   $('stage-description').textContent = c.description;
   for (const name of ['observe', 'explore']) { $(`${name}-image`).src = c.images[name]; $(`${name}-time`).textContent = clock(c.events[name] / c.fps); }
   $('scene-duration').textContent = clock(c.frames / c.fps);
