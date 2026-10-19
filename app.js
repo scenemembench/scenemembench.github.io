@@ -2,7 +2,7 @@ const $ = (id) => document.getElementById(id);
 const NS = 'http://www.w3.org/2000/svg';
 const state = {data: null, current: null, comparisonPlaying: false, comparisonTime: 0, comparisonStartedAt: 0, lastUpdate: 0};
 const scene = $('scene-video');
-const videos = [$('video-a'), $('video-b')];
+const videos = [$('video-a'), $('video-b'), $('video-gt')];
 let statusTimer;
 function notify(message) { $('status-message').textContent = message; clearTimeout(statusTimer); statusTimer = setTimeout(() => $('status-message').textContent = '', 6500); }
 function clock(seconds) { return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`; }
@@ -40,6 +40,7 @@ function selectCase(id) {
   $('focus-toggle').hidden = !c.target_bounds; $('focus-toggle').setAttribute('aria-pressed', 'false'); $('landmark-overlay').style.display = 'none';
   setVideo(scene, c.video, c.images.observe); scene.playbackRate = Number($('scene-speed').value);
   $('seek-poster').hidden = true; state.seekTarget = null; buildMap(); updateScene();
+  if (state.comparisonGroup && state.comparisonGroup.case_id !== id) selectComparisonCase(id);
 }
 function buildMap() {
   const c = state.current, a = state.data.atlas;
@@ -128,44 +129,63 @@ function finishEventSeek() {
     if (state.seekTarget === target && !scene.seeking) { $('seek-poster').hidden = true; state.seekTarget = null; }
   }));
 }
-function modelFor(side) { return state.data.comparisons.find(m => m.id === $(`model-${side}`).value); }
-function comparisonLimit() { return Math.max(...['a', 'b'].map(side => { const m = modelFor(side); return m.frames / m.fps; })); }
-function pauseComparison() { state.comparisonPlaying = false; for (const video of videos) video.pause(); $('compare-play').textContent = '▶ Play both'; }
+function modelFor(side) { return state.comparisonGroup.models.find(m => m.id === $(`model-${side}`).value); }
+function comparisonMedia() { return [...['a','b'].map(side=>({video:$(`video-${side}`),model:modelFor(side)})),{video:$('video-gt'),model:state.comparisonGroup.gt}]; }
+function comparisonLimit() { return Math.max(...comparisonMedia().map(({model})=>model.frames/model.fps)); }
+function pauseComparison() { state.comparisonPlaying = false; for (const video of videos) video.pause(); $('compare-play').textContent = '▶ Play all'; }
 function updateComparisonMedia(side) {
-  const m = modelFor(side); const video = $(`video-${side}`);
-  setVideo(video, m.video, m.poster); $(`endpoint-${side}`).src = m.poster; $(`reference-${side}`).src = m.reference;
-  $(`fps-${side}`).textContent = `${m.fps} FPS`;
-  $(`endpoint-label-${side}`).textContent = `${m.frames} frames · native cadence`;
-  $(`reference-label-${side}`).textContent = `Selected GT reference · source frame ${m.reference_source_frame}`;
+  const m=modelFor(side),video=$(`video-${side}`);if(video.getAttribute('src')!==m.video)setVideo(video,m.video,m.poster);$(`endpoint-${side}`).src=m.poster;
+  $(`fps-${side}`).textContent=`${m.fps} FPS`;
 }
-function updateComparisonTime(time, force = false) {
-  const limit = comparisonLimit(); state.comparisonTime = clamp(time, 0, limit);
-  $('compare-scrub').value = String(state.comparisonTime); $('compare-time').textContent = `${state.comparisonTime.toFixed(2)} s`;
-  for (const side of ['a', 'b']) { const video = $(`video-${side}`), m = modelFor(side); const finalTime = (m.frames - 1) / m.fps; const target = Math.min(state.comparisonTime, finalTime);
-    if (force || Math.abs(video.currentTime - target) > .12) seekVideo(video, target);
-    if (state.comparisonTime >= finalTime) video.pause();
+function updateComparisonTime(time,force=false) {
+  state.comparisonTime=clamp(time,0,comparisonLimit());$('compare-scrub').value=String(state.comparisonTime);$('compare-time').textContent=`${state.comparisonTime.toFixed(2)} s`;
+  for(const {video,model} of comparisonMedia()) {
+    const finalTime=(model.frames-1)/model.fps,target=Math.min(state.comparisonTime,finalTime);
+    if(force || Math.abs(video.currentTime-target)>.12)seekVideo(video,target);
+    if(state.comparisonTime>=finalTime)video.pause();
   }
 }
 function configureComparison() {
-  pauseComparison(); for (const side of ['a', 'b']) updateComparisonMedia(side);
-  const limit = comparisonLimit(); $('compare-scrub').max = String(limit); $('compare-duration').textContent = `${limit.toFixed(2)} s`; updateComparisonTime(0, true); updateEndpointMode();
+  pauseComparison();for(const side of ['a','b'])updateComparisonMedia(side);
+  const gt=state.comparisonGroup.gt;if($('video-gt').getAttribute('src')!==gt.video)setVideo($('video-gt'),gt.video,gt.poster);$('endpoint-gt').src=gt.poster;
+  const limit=comparisonLimit();$('compare-scrub').max=String(limit);$('compare-duration').textContent=`${limit.toFixed(2)} s`;updateComparisonTime(0,true);updateEndpointMode();
 }
 function updateEndpointMode() {
-  const enabled = $('endpoint-mode').checked; if (enabled) pauseComparison();
-  for (const side of ['a', 'b']) { $(`video-${side}`).hidden = enabled; $(`endpoint-${side}`).hidden = !enabled; $(`reference-panel-${side}`).hidden = !enabled; const m = modelFor(side); $(`endpoint-label-${side}`).textContent = enabled ? `Generated endpoint · frame ${m.endpoint}` : `${m.frames} frames · native cadence`; }
-  $('compare-play').disabled = enabled; $('compare-scrub').disabled = enabled;
-  $('comparison-note').textContent = enabled ? 'Each generated endpoint is shown with its actual selected GT reference. Reference frames may differ between models.' : 'Playback follows elapsed Query time at each model’s native FPS. Matching playback time does not imply identical camera poses.';
+  const enabled=$('endpoint-mode').checked;if(enabled)pauseComparison();
+  for(const side of ['a','b']) {
+    $(`video-${side}`).hidden=enabled;$(`endpoint-${side}`).hidden=!enabled;
+    const m=modelFor(side);$(`endpoint-label-${side}`).textContent=enabled?`Generated endpoint · frame ${m.endpoint}`:`${m.frames} frames · native cadence`;
+    $(`endpoint-label-${side}`).previousElementSibling.textContent=enabled?'Generated endpoint':'Generated Query';
+  }
+  $('video-gt').hidden=enabled;$('endpoint-gt').hidden=!enabled;
+  $('shared-gt-description').textContent=enabled?'Ground-truth revisit target for the selected trajectory.':'Ground-truth Query for the selected trajectory. Plays with the generated continuations.';
+  $('compare-play').disabled=enabled;$('compare-scrub').disabled=enabled;
+  $('comparison-note').textContent=enabled?'Generated endpoints are shown with one shared GT target. Models may end at different camera poses.':'Playback follows elapsed Query time at each model’s native FPS, with one shared GT video.';
+}
+function selectComparisonCase(id) {
+  const group=state.data.comparison_groups.find(g=>g.case_id===id);if(!group)return;
+  pauseComparison();state.comparisonGroup=group;const c=state.data.cases.find(c=>c.id===id);$('comparison-case-title').textContent=c.title;
+  for(const button of $('comparison-case-tabs').children)button.setAttribute('aria-pressed',String(button.dataset.resultCase===id));
+  for(const side of ['a','b']) {
+    const select=$(`model-${side}`),previous=select.value;select.replaceChildren();
+    for(const m of group.models){const option=document.createElement('option');option.value=m.id;option.textContent=m.name;select.append(option);}
+    select.value=group.models.some(m=>m.id===previous)?previous:(side==='a'?'hy-worldplay':'matrix-game-3.5');
+  }
+  configureComparison();
 }
 function renderComparison() {
-  for (const side of ['a', 'b']) { const select = $(`model-${side}`); for (const m of state.data.comparisons) { const option = document.createElement('option'); option.value = m.id; option.textContent = m.name; select.append(option); } select.addEventListener('change', configureComparison); }
-  $('model-a').value = 'hy-worldplay'; $('model-b').value = 'matrix-game-3.5';
-  const c = state.data.cases.find(c => c.id === state.data.comparison_case); $('shared-context').src = c.images.observe;
-  $('view-comparison-case').addEventListener('click', () => selectCase(state.data.comparison_case)); configureComparison();
+  for(const [index,c] of state.data.cases.entries()) {
+    const button=document.createElement('button');button.className='case-tab';button.dataset.resultCase=c.id;button.setAttribute('aria-pressed','false');
+    const number=document.createElement('span');number.className='tab-index';number.textContent=`0${index+1}`;button.append(number,document.createTextNode(c.title));
+    button.addEventListener('click',()=>selectComparisonCase(c.id));$('comparison-case-tabs').append(button);
+  }
+  for(const side of ['a','b'])$(`model-${side}`).addEventListener('change',configureComparison);
+  $('view-comparison-case').addEventListener('click',()=>selectCase(state.comparisonGroup.case_id));selectComparisonCase(state.current.id);
 }
 async function startComparison() {
   if (state.comparisonPlaying) { pauseComparison(); return; }
   if (state.comparisonTime >= comparisonLimit() - .04) updateComparisonTime(0, true);
-  state.comparisonPlaying = true; state.comparisonStartedAt = performance.now() - state.comparisonTime * 1000; $('compare-play').textContent = 'Ⅱ Pause both';
+  state.comparisonPlaying = true; state.comparisonStartedAt = performance.now() - state.comparisonTime * 1000; $('compare-play').textContent = 'Ⅱ Pause all';
   const results = await Promise.allSettled(videos.map(v => v.play()));
   if (results.some(r => r.status === 'rejected')) { pauseComparison(); notify('Video playback could not start. Please refresh the page and try again.'); }
 }
@@ -174,7 +194,7 @@ function tick(now) {
   requestAnimationFrame(tick);
 }
 async function init() {
-  try { const response = await fetch('cases.json?v=20261019-fastseek'); if (!response.ok) throw new Error('Could not load case data'); state.data = await response.json(); renderCaseTabs(); selectCase(state.data.initial_case); renderComparison(); }
+  try { const response = await fetch('cases.json?v=20261019-four-results'); if (!response.ok) throw new Error('Could not load case data'); state.data = await response.json(); renderCaseTabs(); selectCase(state.data.initial_case); renderComparison(); }
   catch (error) { notify('The scene data could not be loaded. Please refresh the page.'); console.error(error); return; }
   setSceneView(true);
   $('view-atlas').addEventListener('click',()=>setSceneView(true));

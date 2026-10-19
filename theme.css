@@ -276,3 +276,11 @@ footer p,footer>a:last-child {font-size:16px;}
  .live-view {height:119px;}
  .atlas-mode>#scene-video,.atlas-mode>.seek-poster {inset:auto 14px 28px auto;width:150px;height:84.375px;}
 }
+
+.shared-gt {display:grid;grid-template-columns:300px minmax(0,1fr);gap:28px;align-items:center;padding:22px 0;margin-bottom:24px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
+.shared-gt-media {aspect-ratio:16/9;background:var(--ink);}
+.shared-gt-media video,.shared-gt-media img {display:block;width:100%;height:100%;object-fit:contain;}
+.shared-gt-copy h3 {font-size:21px;margin:12px 0 8px;font-weight:550;}
+.shared-gt-copy p {font-size:16px;line-height:1.7;color:var(--muted);margin:0 0 12px;}
+.shared-gt-copy a {font-size:14px;color:var(--teal);border-bottom:1px solid var(--teal);}
+@media(max-width:700px){.shared-gt {grid-template-columns:1fr;gap:16px;}.shared-gt-media {width:100%;max-width:400px;}.shared-gt-copy h3 {font-size:20px;}}
