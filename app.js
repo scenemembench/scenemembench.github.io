@@ -60,10 +60,10 @@ function buildMap() {
     const geometry = svg('g', {id:root.id==='route-map'?'map-geometry':'atlas-geometry'}); root.append(geometry);
     if (c.target_bounds) {
       const lo=c.mapPoint([c.target_bounds.max[0],c.target_bounds.min[1]]), hi=c.mapPoint([c.target_bounds.min[0],c.target_bounds.max[1]]);
-      geometry.append(svg('rect',{x:lo[0],y:lo[1],width:hi[0]-lo[0],height:hi[1]-lo[1],fill:'#61dfbf25',stroke:'#a3ffe0','stroke-width':3}));
+      geometry.append(svg('rect',{x:lo[0],y:lo[1],width:hi[0]-lo[0],height:hi[1]-lo[1],fill:'#d96b4d25',stroke:'#ffb19e','stroke-width':3}));
     }
-    for (const [start,end,color] of [[0,c.context_end,'#ffd16b'],[c.context_end-1,c.frames,'#65ffe0']]) {
-      geometry.append(svg('polyline',{points:points.slice(start,end).map(p=>p.join(',')).join(' '),fill:'none',stroke:'#17352d','stroke-width':9,'stroke-linejoin':'round'}));
+    for (const [start,end,color] of [[0,c.context_end,'#9cbeef'],[c.context_end-1,c.frames,'#ffb19e']]) {
+      geometry.append(svg('polyline',{points:points.slice(start,end).map(p=>p.join(',')).join(' '),fill:'none',stroke:'#23344a','stroke-width':9,'stroke-linejoin':'round'}));
       geometry.append(svg('polyline',{points:points.slice(start,end).map(p=>p.join(',')).join(' '),fill:'none',stroke:color,'stroke-width':4,'stroke-linejoin':'round'}));
     }
     // Clickable event bearings also distinguish pure rotation at a fixed position.
@@ -72,7 +72,7 @@ function buildMap() {
       const r=c.inPlace?({observe:35,explore:55,revisit:75}[event]):18;
       const x=point[0]+Math.sin(yaw)*r,y=point[1]-Math.cos(yaw)*r;
       const node=svg('g',{class:'atlas-event',role:'button',tabindex:0,'aria-label':`Jump to ${event}`});
-      node.append(svg('line',{x1:point[0],y1:point[1],x2:x,y2:y,stroke:'#ffffffaa','stroke-width':2}),svg('circle',{cx:x,cy:y,r:10,fill:event==='revisit'?'#248c78':'#bd8a30',stroke:'#fff','stroke-width':3}),svg('text',{x:x+15,y:y+5,fill:'#fff','font-size':15,'paint-order':'stroke',stroke:'#183b32','stroke-width':4},event==='observe'?'A · Observe':event==='explore'?'Explore':'B · Revisit'));
+      node.append(svg('line',{x1:point[0],y1:point[1],x2:x,y2:y,stroke:'#ffffffaa','stroke-width':2}),svg('circle',{cx:x,cy:y,r:10,fill:event==='revisit'?'#c04b38':'#446da2',stroke:'#fff','stroke-width':3}),svg('text',{x:x+15,y:y+5,fill:'#fff','font-size':15,'paint-order':'stroke',stroke:'#23344a','stroke-width':4},event==='observe'?'A · Observe':event==='explore'?'Explore':'B · Revisit'));
       node.addEventListener('click',()=>jumpEvent(event));node.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();jumpEvent(event);}});geometry.append(node);
     }
     root.append(svg('g',{id:root.id==='route-map'?'map-camera':'atlas-camera'}));
@@ -111,7 +111,7 @@ function updateScene() {
   for (const id of ['map-camera','atlas-camera']) {
     const group=$(id); group.replaceChildren();
     const marker=svg('g',{transform:`translate(${point[0]} ${point[1]}) rotate(${pose[3]-90})`});
-    marker.append(svg('path',{d:'M0 0 L62 -40 Q78 0 62 40 Z',fill:'#65ffe044',stroke:'#a6ffe5','stroke-width':2}),svg('circle',{r:7,fill:'#53ddba',stroke:'#fff','stroke-width':3}));group.append(marker);
+    marker.append(svg('path',{d:'M0 0 L62 -40 Q78 0 62 40 Z',fill:'#ffb19e44',stroke:'#ffd1c3','stroke-width':2}),svg('circle',{r:7,fill:'#c04b38',stroke:'#fff','stroke-width':3}));group.append(marker);
   }
   const preview=$('camera-preview'); if(Math.abs(preview.currentTime-scene.currentTime)>.15) seekVideo(preview,scene.currentTime);
   highlightLandmark(pose);
