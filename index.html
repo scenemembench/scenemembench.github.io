@@ -10,9 +10,9 @@
   <meta property="og:title" content="SceneMemBench">
   <meta property="og:description" content="A Benchmark for Scene Memory in Interactive Video World Models">
   <meta property="og:url" content="https://scenemembench.github.io/">
-  <link rel="stylesheet" href="style.css?v=20261019-layout2">
-  <link rel="stylesheet" href="theme.css?v=20261019-layout2">
-  <script type="module" src="app.js?v=20261019-layout2"></script>
+  <link rel="stylesheet" href="style.css?v=20261019-revisit3">
+  <link rel="stylesheet" href="theme.css?v=20261019-revisit3">
+  <script type="module" src="app.js?v=20261019-revisit3"></script>
 </head>
 <body>
 <header class="nav"><a class="wordmark" href="#"><span class="brand-icon" aria-hidden="true">▣</span> SceneMemBench<span class="wordmark-dot">.</span></a><nav aria-label="Main navigation"><a href="#explore">Explore</a><a href="#compare">Compare models</a><a href="#about">Benchmark</a><a class="code-link" href="https://github.com/Seeyou-Hi/SceneMemBench/tree/release/initial-open-source" target="_blank" rel="noopener">Code ↗</a></nav></header>
@@ -43,6 +43,7 @@
         <div class="memory-cards">
           <button class="memory-card" data-event="observe"><span class="card-kicker">01 / OBSERVE</span><img id="observe-image" alt="Previously observed view"/><span class="card-copy">A view to remember<span id="observe-time"></span></span></button>
           <button class="memory-card" data-event="explore"><span class="card-kicker">02 / EXPLORE</span><img id="explore-image" alt="Scene during exploration"/><span class="card-copy">Elsewhere in the scene<span id="explore-time"></span></span></button>
+          <button class="memory-card" data-event="revisit"><span class="card-kicker">03 / REVISIT</span><img id="revisit-image" alt="Ground-truth revisit view"/><span class="card-copy">Return to the scene<span id="revisit-time"></span></span></button>
         </div>
         <div class="path-card"><div class="path-card-header"><span>CAMERA ROUTE</span><span>Top view · UE poses</span></div><svg id="route-map" viewBox="0 0 300 180" role="img" aria-label="Top-down camera position and viewing direction"><defs><pattern id="map-grid" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="0.65" fill="#becdc5"/></pattern></defs><rect width="300" height="180" fill="url(#map-grid)"/><g id="map-geometry"></g><g id="map-camera"></g></svg><div class="path-legend"><span><i class="legend-line context"></i> Context</span><span><i class="legend-line query"></i> Query</span><span id="path-motion"></span></div></div>
         <button id="focus-toggle" title="Source landmark bounds projected into the camera view" class="focus-toggle" aria-pressed="false" hidden>Highlight landmark</button>

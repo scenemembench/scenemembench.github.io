@@ -250,3 +250,19 @@ footer p,footer>a:last-child {font-size:16px;}
  .timeline-phases span:first-child::after {content:'History';font-size:10px;}
  .timeline-phases span+span::after {content:'Query';font-size:10px;}
 }
+
+/* Three keyframes remain in view without covering the route inset. */
+.memory-cards,.atlas-mode .memory-cards {width:160px;top:120px;gap:9px;}
+.memory-card .card-kicker {padding:6px 9px;font-size:11px;}
+.memory-card .card-copy {padding:7px 9px;font-size:12px;gap:3px;}
+.memory-card .card-copy>span {font-size:11px;}
+.memory-card[data-event=revisit] .card-kicker {color:var(--teal);}
+.scene-stage {min-height:680px;}
+@media(max-width:700px) {
+ .scene-stage {height:610px;min-height:0;}
+ .memory-cards,.atlas-mode .memory-cards {left:14px;right:14px;top:108px;width:auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+ .memory-card {width:auto;min-width:0;}
+ .memory-card .card-kicker {font-size:9px;padding:7px 5px;letter-spacing:.4px;}
+ .memory-card .card-copy {font-size:11px;padding:7px 5px;}
+ .memory-card .card-copy>span {font-size:10px;}
+}

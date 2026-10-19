@@ -29,7 +29,7 @@ function selectCase(id) {
   $('task-label').textContent = c.task;
   $('stage-headline').textContent = c.headline;
   $('stage-description').textContent = c.description;
-  for (const name of ['observe', 'explore']) { $(`${name}-image`).src = c.images[name]; $(`${name}-time`).textContent = clock(c.events[name] / c.fps); }
+  for (const name of ['observe', 'explore', 'revisit']) { $(`${name}-image`).src = c.images[name]; $(`${name}-time`).textContent = clock(c.events[name] / c.fps); }
   $('scene-duration').textContent = clock(c.frames / c.fps);
   $('scene-scrub').max = String((c.frames - 1) / c.fps); $('scene-scrub').value = '0';
   const fraction = c.context_end / c.frames * 100;
