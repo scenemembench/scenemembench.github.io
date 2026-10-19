@@ -10,9 +10,9 @@
   <meta property="og:title" content="SceneMemBench">
   <meta property="og:description" content="A Benchmark for Scene Memory in Interactive Video World Models">
   <meta property="og:url" content="https://scenemembench.github.io/">
-  <link rel="stylesheet" href="style.css?v=20261019-revisit3">
-  <link rel="stylesheet" href="theme.css?v=20261019-revisit3">
-  <script type="module" src="app.js?v=20261019-revisit3"></script>
+  <link rel="stylesheet" href="style.css?v=20261019-fastseek">
+  <link rel="stylesheet" href="theme.css?v=20261019-fastseek">
+  <script type="module" src="app.js?v=20261019-fastseek"></script>
 </head>
 <body>
 <header class="nav"><a class="wordmark" href="#"><span class="brand-icon" aria-hidden="true">▣</span> SceneMemBench<span class="wordmark-dot">.</span></a><nav aria-label="Main navigation"><a href="#explore">Explore</a><a href="#compare">Compare models</a><a href="#about">Benchmark</a><a class="code-link" href="https://github.com/Seeyou-Hi/SceneMemBench/tree/release/initial-open-source" target="_blank" rel="noopener">Code ↗</a></nav></header>
@@ -36,9 +36,9 @@
     <div id="case-tabs" class="case-tabs" role="group" aria-label="Choose a revisit type"></div>
     <div class="scene-shell">
       <div class="scene-stage" id="scene-stage">
-        <video id="scene-video" muted playsinline preload="metadata" aria-label="Ground-truth scene trajectory"></video>
+        <video id="scene-video" muted playsinline preload="auto" aria-label="Ground-truth scene trajectory"></video>
         <svg id="landmark-overlay" class="landmark-overlay" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><polygon id="landmark-polygon"/></svg>
-        <svg id="atlas-stage" class="atlas-stage" role="img" aria-label="Greek Island atlas with interactive camera trajectory"></svg><div class="stage-shade"></div><div class="view-switch" role="group" aria-label="Scene view"><button id="view-atlas" aria-pressed="true">Atlas</button><button id="view-first-person" aria-pressed="false">First person</button></div><div class="live-view"><span>CURRENT CAMERA VIEW</span><video id="camera-preview" muted playsinline preload="metadata"></video></div>
+        <svg id="atlas-stage" class="atlas-stage" role="img" aria-label="Greek Island atlas with interactive camera trajectory"></svg><img id="seek-poster" class="seek-poster" alt="Selected trajectory keyframe" hidden><div class="stage-shade"></div><div class="view-switch" role="group" aria-label="Scene view"><button id="view-atlas" aria-pressed="true">Atlas</button><button id="view-first-person" aria-pressed="false">First person</button></div><div class="live-view"><span>CURRENT CAMERA VIEW</span></div>
         <div class="scene-topline"><span class="scene-label"><span class="live-dot"></span> GREEK ISLAND <span class="scene-label-separator">/</span> <span id="task-label">Novel view</span></span><span class="gt-label">Ground-truth scene</span></div>
         <div class="memory-cards">
           <button class="memory-card" data-event="observe"><span class="card-kicker">01 / OBSERVE</span><img id="observe-image" alt="Previously observed view"/><span class="card-copy">A view to remember<span id="observe-time"></span></span></button>

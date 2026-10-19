@@ -39,7 +39,7 @@ function selectCase(id) {
   for (const index of [...Object.values(c.events), c.context_end]) { const line = document.createElement('span'); line.className = 'timeline-marker'; line.style.left = `${index / c.frames * 100}%`; $('timeline-markers').append(line); }
   $('focus-toggle').hidden = !c.target_bounds; $('focus-toggle').setAttribute('aria-pressed', 'false'); $('landmark-overlay').style.display = 'none';
   setVideo(scene, c.video, c.images.observe); scene.playbackRate = Number($('scene-speed').value);
-  setVideo($('camera-preview'), c.video, c.images.observe); buildMap(); updateScene();
+  $('seek-poster').hidden = true; state.seekTarget = null; buildMap(); updateScene();
 }
 function buildMap() {
   const c = state.current, a = state.data.atlas;
@@ -111,10 +111,23 @@ function updateScene() {
     const marker=svg('g',{transform:`translate(${point[0]} ${point[1]}) rotate(${pose[3]-90})`});
     marker.append(svg('path',{d:'M0 0 L62 -40 Q78 0 62 40 Z',fill:'#ffb19e44',stroke:'#ffd1c3','stroke-width':2}),svg('circle',{r:7,fill:'#c04b38',stroke:'#fff','stroke-width':3}));group.append(marker);
   }
-  const preview=$('camera-preview'); if(Math.abs(preview.currentTime-scene.currentTime)>.15) seekVideo(preview,scene.currentTime);
+
   highlightLandmark(pose);
 }
-function jumpEvent(event) { const c = state.current; if (!c) return; seekVideo(scene, c.events[event] / c.fps); }
+function jumpEvent(event) {
+  const c = state.current; if (!c) return;
+  state.seekTarget = c.events[event] / c.fps;
+  const poster = $('seek-poster'); poster.src = c.images[event]; poster.hidden = false;
+  seekVideo(scene, state.seekTarget); updateScene();
+  if (!scene.seeking && scene.readyState >= 2) finishEventSeek();
+}
+function finishEventSeek() {
+  if (state.seekTarget == null || scene.seeking || scene.readyState < 2 || Math.abs(scene.currentTime - state.seekTarget) > .1) return;
+  const target = state.seekTarget;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    if (state.seekTarget === target && !scene.seeking) { $('seek-poster').hidden = true; state.seekTarget = null; }
+  }));
+}
 function modelFor(side) { return state.data.comparisons.find(m => m.id === $(`model-${side}`).value); }
 function comparisonLimit() { return Math.max(...['a', 'b'].map(side => { const m = modelFor(side); return m.frames / m.fps; })); }
 function pauseComparison() { state.comparisonPlaying = false; for (const video of videos) video.pause(); $('compare-play').textContent = '▶ Play both'; }
@@ -161,17 +174,18 @@ function tick(now) {
   requestAnimationFrame(tick);
 }
 async function init() {
-  try { const response = await fetch('cases.json'); if (!response.ok) throw new Error('Could not load case data'); state.data = await response.json(); renderCaseTabs(); selectCase(state.data.initial_case); renderComparison(); }
+  try { const response = await fetch('cases.json?v=20261019-fastseek'); if (!response.ok) throw new Error('Could not load case data'); state.data = await response.json(); renderCaseTabs(); selectCase(state.data.initial_case); renderComparison(); }
   catch (error) { notify('The scene data could not be loaded. Please refresh the page.'); console.error(error); return; }
   setSceneView(true);
   $('view-atlas').addEventListener('click',()=>setSceneView(true));
   $('view-first-person').addEventListener('click',()=>setSceneView(false));
   $('scene-play').addEventListener('click', async () => { try { if (scene.paused) { if (scene.ended) scene.currentTime = 0; await scene.play(); } else scene.pause(); } catch { notify('The scene video could not be played.'); } });
-  scene.addEventListener('play', () => { $('camera-preview').playbackRate=scene.playbackRate; $('camera-preview').play().catch(()=>{}); $('scene-play').textContent = 'Ⅱ'; $('scene-play').setAttribute('aria-label', 'Pause trajectory'); });
-  scene.addEventListener('pause', () => { $('camera-preview').pause(); $('scene-play').textContent = '▶'; $('scene-play').setAttribute('aria-label', 'Play trajectory'); });
+  scene.addEventListener('play', () => { $('scene-play').textContent = 'Ⅱ'; $('scene-play').setAttribute('aria-label', 'Pause trajectory'); });
+  scene.addEventListener('pause', () => { $('scene-play').textContent = '▶'; $('scene-play').setAttribute('aria-label', 'Play trajectory'); });
   for (const event of ['loadedmetadata', 'seeked', 'timeupdate', 'ended']) scene.addEventListener(event, updateScene);
+  for (const event of ['seeked', 'loadeddata', 'canplay']) scene.addEventListener(event, finishEventSeek);
   scene.addEventListener('error', () => notify('The scene video could not be loaded.'));
-  $('scene-scrub').addEventListener('input', event => { seekVideo(scene, Number(event.target.value)); });
+  $('scene-scrub').addEventListener('input', event => { state.seekTarget = null; $('seek-poster').hidden = true; seekVideo(scene, Number(event.target.value)); });
   $('scene-speed').addEventListener('change', event => scene.playbackRate = Number(event.target.value));
   for (const button of document.querySelectorAll('[data-event]')) button.addEventListener('click', () => jumpEvent(button.dataset.event));
   $('jump-revisit').addEventListener('click', () => jumpEvent('revisit'));
