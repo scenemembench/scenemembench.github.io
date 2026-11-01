@@ -27,7 +27,7 @@ body {background:var(--paper);}
 .hero h1 span {color:var(--teal);}
 .hero .paper-title {font-family:var(--sans);font-style:normal;font-size:clamp(19px,2vw,28px);font-weight:450;letter-spacing:-.5px;max-width:900px;color:var(--ink);}
 .hero .intro {color:#5c6675;text-shadow:none;}
-.hero-actions {gap:0;}
+.hero-actions {gap:0;flex-wrap:wrap;row-gap:8px;}
 .hero .hero-cta,.hero-code {border-radius:0;backdrop-filter:none;border:1px solid var(--ink);background:var(--paper);color:var(--ink);}
 .hero .hero-cta {background:var(--ink);color:var(--paper);border-color:var(--ink);}
 .hero-code {border-left:0;}
@@ -164,7 +164,8 @@ footer p,footer>a:last-child {font-size:16px;}
  .hero .intro {font-size:18px;}
  .hero .hero-note {font-size:14px;line-height:1.8;max-width:100%;}
  .hero .hero-cta,.hero-code {font-size:16px;}
- .hero-actions {margin-top:22px;margin-bottom:18px;}
+ .hero-actions {margin-top:22px;margin-bottom:18px;gap:8px;}
+ .hero-actions .hero-code {border-left:1px solid var(--ink);}
  .hero {padding-top:65px;padding-bottom:75px;}
  .wall-motion {font-size:12px;}
  .eyebrow {font-size:12px;}
