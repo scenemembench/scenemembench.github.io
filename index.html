@@ -10,9 +10,9 @@
   <meta property="og:title" content="SceneMemBench">
   <meta property="og:description" content="A Benchmark for Scene Memory in Interactive Video World Models">
   <meta property="og:url" content="https://scenemembench.github.io/">
-  <link rel="stylesheet" href="theme.css?v=20261104-motion-playback">
-  <script type="module" src="app.js?v=20261104-motion-playback"></script>
-  <script type="module" src="trajectories.js?v=20261104-motion-playback"></script>
+  <link rel="stylesheet" href="theme.css?v=20261104-buffered">
+  <script type="module" src="app.js?v=20261104-buffered"></script>
+  <script type="module" src="trajectories.js?v=20261104-buffered"></script>
 </head>
 <body>
 <header class="nav content-width">
@@ -63,8 +63,8 @@
         <article class="trajectory-card" data-trajectory="full"><div class="trajectory-card-head"><h4>Full Rotation</h4><span class="trajectory-phase">Observe</span></div><svg class="trajectory-diagram" viewBox="0 0 480 290" role="img" aria-label="Animated camera motion for Full Rotation"></svg><p>Rotate through a complete circle and face the starting direction again.</p><div class="trajectory-progress"><span></span></div></article>
       </div>
       <div class="protocol-group"><h3>Return to a Novel View</h3><p>The camera sees familiar content from a new position.</p>
-        <article class="trajectory-card" data-trajectory="straight"><div class="trajectory-card-head"><h4>Forward and Look Back</h4><span class="trajectory-phase">Observe</span></div><svg class="trajectory-diagram" viewBox="0 0 480 290" role="img" aria-label="Animated camera motion for Forward and Look Back"></svg><p>Move forward, stop, and turn around. Revisit from the new position.</p><div class="trajectory-progress"><span></span></div></article>
-        <article class="trajectory-card" data-trajectory="cross"><div class="trajectory-card-head"><h4>New-Viewpoint Revisit</h4><span class="trajectory-phase">Observe</span></div><svg class="trajectory-diagram" viewBox="0 0 480 290" role="img" aria-label="Animated camera motion for New-Viewpoint Revisit"></svg><p>Turn away, move elsewhere, then look back from a displaced viewpoint.</p><div class="trajectory-progress"><span></span></div></article>
+        <article class="trajectory-card" data-trajectory="straight"><div class="trajectory-card-head"><h4>Forward and Look Back</h4><span class="trajectory-phase">Observe</span></div><svg class="trajectory-diagram" viewBox="0 0 480 290" role="img" aria-label="Animated camera motion for Forward and Look Back"></svg><p>Pass through a doorway, then turn around to see the other side of the surrounding scene.</p><div class="trajectory-progress"><span></span></div></article>
+        <article class="trajectory-card" data-trajectory="cross"><div class="trajectory-card-head"><h4>New-Viewpoint Revisit</h4><span class="trajectory-phase">Observe</span></div><svg class="trajectory-diagram" viewBox="0 0 480 290" role="img" aria-label="Animated camera motion for New-Viewpoint Revisit"></svg><p>Start facing the target, explore elsewhere, then face the same target from a new viewpoint.</p><div class="trajectory-progress"><span></span></div></article>
       </div>
     </div>
     <p class="dataset-summary">600 controlled trajectories across 33 UE scenes, plus 60 Full Rollout inputs.</p>

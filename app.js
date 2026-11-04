@@ -8,13 +8,50 @@ function notify(message) { $('status-message').textContent = message; clearTimeo
 function clock(seconds) { return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`; }
 function svg(tag, attributes = {}, text = '') { const node = document.createElementNS(NS, tag); for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, value); if (text) node.textContent = text; return node; }
 function clamp(value, low, high) { return Math.max(low, Math.min(high, value)); }
-const MEDIA_VERSION = '20261104-motion';
+const MEDIA_VERSION = '20261104-buffered';
+const sceneCache = new Map();
+let sceneDownload = null;
+function sceneProgress(loaded, total) {
+  $('scene-buffering').textContent = total ? `Preparing video · ${Math.min(100, Math.round(loaded / total * 100))}%` : 'Preparing video…';
+}
+function prepareScene() {
+  const source = scene.dataset.source;
+  if (sceneCache.has(source)) {
+    const url = sceneCache.get(source);
+    if (scene.getAttribute('src') !== url) {scene.src = url; scene.preload = 'auto'; scene.load();}
+    sceneProgress(1, 1); return Promise.resolve();
+  }
+  if (sceneDownload?.source === source) return sceneDownload.promise;
+  sceneDownload?.controller.abort();
+  const job = {source, controller:new AbortController()}; sceneDownload = job;
+  sceneProgress(0, 0);
+  job.promise = (async () => {
+    const response = await fetch(`${source}?v=${MEDIA_VERSION}`, {signal:job.controller.signal});
+    if (!response.ok) throw new Error(`Video download failed (${response.status})`);
+    const total = Number(response.headers.get('Content-Length')) || 0;
+    const chunks = []; let loaded = 0;
+    if (response.body) {
+      const reader = response.body.getReader();
+      while (true) {
+        const {done,value} = await reader.read(); if (done) break;
+        chunks.push(value); loaded += value.byteLength;
+        if (scene.dataset.source === source) sceneProgress(loaded, total);
+      }
+    } else chunks.push(await response.arrayBuffer());
+    if (job.controller.signal.aborted || scene.dataset.source !== source) throw new DOMException('Case changed','AbortError');
+    const url = URL.createObjectURL(new Blob(chunks, {type:'video/mp4'}));
+    sceneCache.set(source, url); scene.src = url; scene.preload = 'auto'; scene.load(); sceneProgress(1,1);
+  })().finally(() => {if (sceneDownload === job) sceneDownload = null;});
+  return job.promise;
+}
 function loadVideo(video) {
+  if (video === scene) {prepareScene().catch(error=>{if(error.name!=='AbortError')sceneProgress(0,0);});return;}
   if (!video.dataset.source || video.getAttribute('src')) return;
   video.src = `${video.dataset.source}?v=${MEDIA_VERSION}`; video.preload = 'auto'; video.load();
 }
 function setVideo(video, src, poster, defer = false) {
   video.pause();
+  if (video === scene && sceneDownload?.source !== src) {sceneDownload?.controller.abort();sceneDownload=null;}
   if (video.seekHandler) video.removeEventListener('loadedmetadata', video.seekHandler);
   video.seekHandler = null; video.poster = poster; video.dataset.source = src;
   video.removeAttribute('src'); video.preload = 'none'; video.load();
@@ -56,6 +93,8 @@ async function toggleScene() {
   if (scene.ended) seekVideo(scene, 0);
   $('scene-start').hidden = true; $('scene-buffering').hidden = false;
   try {
+    await prepareScene();
+    if (controller.signal.aborted) return;
     await readyVideo(scene, controller.signal);
     if (controller.signal.aborted) return;
     await scene.play(); notify('');
@@ -264,7 +303,7 @@ function tick(now) {
   requestAnimationFrame(tick);
 }
 async function init() {
-  try { const response = await fetch('cases.json?v=20261104-motion-playback'); if (!response.ok) throw new Error('Could not load case data'); state.data = await response.json(); renderCaseTabs(); selectCase(state.data.initial_case); renderComparison(); }
+  try { const response = await fetch('cases.json?v=20261104-buffered'); if (!response.ok) throw new Error('Could not load case data'); state.data = await response.json(); renderCaseTabs(); selectCase(state.data.initial_case); renderComparison(); }
   catch (error) { notify('The scene data could not be loaded. Please refresh the page.'); console.error(error); return; }
   setSceneView(true);
   $('view-atlas').addEventListener('click',()=>setSceneView(true));
@@ -272,7 +311,6 @@ async function init() {
   $('scene-play').addEventListener('click', toggleScene); $('scene-start').addEventListener('click',toggleScene);
   scene.addEventListener('play', () => { $('scene-play').textContent = 'Ⅱ'; $('scene-play').setAttribute('aria-label', 'Pause trajectory');$('scene-start').hidden=true; });
   scene.addEventListener('pause', () => { $('scene-play').textContent = '▶'; $('scene-play').setAttribute('aria-label', 'Play trajectory');if(!state.scenePending)$('scene-start').hidden=false; });
-  scene.addEventListener('waiting',()=>{if(!scene.paused)$('scene-buffering').hidden=false;});
   scene.addEventListener('playing',()=>{$('scene-buffering').hidden=true;});
   scene.addEventListener('ended',()=>{$('scene-start').hidden=false;});
   for (const event of ['loadedmetadata', 'seeked', 'timeupdate', 'ended']) scene.addEventListener(event, updateScene);
