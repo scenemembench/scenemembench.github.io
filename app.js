@@ -196,7 +196,7 @@ function tick(now) {
 async function init() {
   try { const response = await fetch('cases.json?v=20261019-four-results'); if (!response.ok) throw new Error('Could not load case data'); state.data = await response.json(); renderCaseTabs(); selectCase(state.data.initial_case); renderComparison(); }
   catch (error) { notify('The scene data could not be loaded. Please refresh the page.'); console.error(error); return; }
-  setSceneView(true);
+  setSceneView(false);
   $('view-atlas').addEventListener('click',()=>setSceneView(true));
   $('view-first-person').addEventListener('click',()=>setSceneView(false));
   $('scene-play').addEventListener('click', async () => { try { if (scene.paused) { if (scene.ended) scene.currentTime = 0; await scene.play(); } else scene.pause(); } catch { notify('The scene video could not be played.'); } });
@@ -224,14 +224,14 @@ if (motionButton) {
   if (reducedMotion.matches) {
     document.querySelector('.hero').classList.add('motion-paused');
     motionButton.setAttribute('aria-pressed', 'true');
-    motionButton.textContent = 'Reduced motion';
+    motionButton.textContent = 'Gallery paused';
     motionButton.disabled = true;
   }
   motionButton.addEventListener('click', () => {
     const paused = motionButton.getAttribute('aria-pressed') !== 'true';
     document.querySelector('.hero').classList.toggle('motion-paused', paused);
     motionButton.setAttribute('aria-pressed', String(paused));
-    motionButton.textContent = paused ? '▶ Play background' : 'Ⅱ Pause background';
-    motionButton.setAttribute('aria-label', paused ? 'Play background animation' : 'Pause background animation');
+    motionButton.textContent = paused ? 'Play gallery' : 'Pause gallery';
+    motionButton.setAttribute('aria-label', paused ? 'Play scene gallery animation' : 'Pause scene gallery animation');
   });
 }

@@ -8,4 +8,4 @@ Code: https://github.com/Seeyou-Hi/SceneMemBench
 
 Dataset: https://huggingface.co/datasets/scenemembench/SceneMemBench
 
-The visual theme lives in `theme.css`; `style.css` defines the responsive layout.
+The responsive layout and visual theme live in `theme.css`.
