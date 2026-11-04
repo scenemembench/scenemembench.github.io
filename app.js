@@ -1,6 +1,6 @@
 const $ = (id) => document.getElementById(id);
 const NS = 'http://www.w3.org/2000/svg';
-const state = {data: null, current: null, comparisonPlaying: false, comparisonTime: 0, comparisonStartedAt: 0, lastUpdate: 0};
+const state = {data: null, current: null, comparisonPlaying: false, comparisonPending: false, comparisonNear: false, comparisonTime: 0, comparisonRequest: 0, lastUpdate: 0, lastSceneFrame: -1};
 const scene = $('scene-video');
 const videos = [$('video-a'), $('video-b'), $('video-gt')];
 let statusTimer;
@@ -8,10 +8,62 @@ function notify(message) { $('status-message').textContent = message; clearTimeo
 function clock(seconds) { return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`; }
 function svg(tag, attributes = {}, text = '') { const node = document.createElementNS(NS, tag); for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, value); if (text) node.textContent = text; return node; }
 function clamp(value, low, high) { return Math.max(low, Math.min(high, value)); }
-function setVideo(video, src, poster) { video.pause(); video.poster = poster; video.src = src; video.load(); }
+const MEDIA_VERSION = '20261104-motion';
+function loadVideo(video) {
+  if (!video.dataset.source || video.getAttribute('src')) return;
+  video.src = `${video.dataset.source}?v=${MEDIA_VERSION}`; video.preload = 'auto'; video.load();
+}
+function setVideo(video, src, poster, defer = false) {
+  video.pause();
+  if (video.seekHandler) video.removeEventListener('loadedmetadata', video.seekHandler);
+  video.seekHandler = null; video.poster = poster; video.dataset.source = src;
+  video.removeAttribute('src'); video.preload = 'none'; video.load();
+  if (!defer) loadVideo(video);
+}
 function seekVideo(video, time) {
-  const seek = () => { if (video.readyState >= 1 && Number.isFinite(video.duration)) video.currentTime = clamp(time, 0, Math.max(0, video.duration - 0.001)); };
-  if (video.readyState >= 1) seek(); else video.addEventListener('loadedmetadata', seek, {once: true});
+  if (video.seekHandler) video.removeEventListener('loadedmetadata', video.seekHandler);
+  const seek = () => {
+    video.seekHandler = null;
+    if (video.readyState >= 1 && Number.isFinite(video.duration)) {
+      const target = clamp(time, 0, Math.max(0, video.duration - 0.001));
+      if (Math.abs(video.currentTime - target) > .025) video.currentTime = target;
+    }
+  };
+  if (video.readyState >= 1) seek(); else { video.seekHandler = seek; video.addEventListener('loadedmetadata', seek, {once: true}); }
+}
+function readyVideo(video, signal) {
+  return new Promise((resolve, reject) => {
+    let timer;
+    const cleanup = () => {clearTimeout(timer); for (const e of ['canplay','loadeddata','seeked','error']) video.removeEventListener(e, check); signal.removeEventListener('abort', aborted);};
+    const aborted = () => {cleanup(); reject(new DOMException('Playback cancelled', 'AbortError'));};
+    const check = () => {
+      if (signal.aborted) return aborted();
+      if (video.error) {cleanup(); reject(new Error(video.error.message || 'Video unavailable'));}
+      else if (video.readyState >= 3 && !video.seeking) {cleanup(); resolve();}
+    };
+    for (const e of ['canplay','loadeddata','seeked','error']) video.addEventListener(e, check);
+    signal.addEventListener('abort', aborted, {once:true});
+    timer = setTimeout(() => {cleanup(); reject(new Error('Loading took too long'));}, 30000); check();
+  });
+}
+function pauseScene() {
+  state.sceneController?.abort(); state.scenePending = false; scene.pause(); $('scene-buffering').hidden = true; $('scene-start').hidden = false;
+}
+async function toggleScene() {
+  if (!scene.paused || state.scenePending) {pauseScene(); return;}
+  const controller = new AbortController(); state.sceneController = controller; state.scenePending = true;
+  if (scene.error) scene.load();
+  if (scene.ended) seekVideo(scene, 0);
+  $('scene-start').hidden = true; $('scene-buffering').hidden = false;
+  try {
+    await readyVideo(scene, controller.signal);
+    if (controller.signal.aborted) return;
+    await scene.play(); notify('');
+  } catch (error) {
+    if (!controller.signal.aborted && error.name !== 'AbortError') notify('Video is still loading. Please press Play to retry.');
+  } finally {
+    if (state.sceneController === controller) {state.scenePending = false; $('scene-buffering').hidden = true; $('scene-start').hidden = !scene.paused;}
+  }
 }
 function sourceFrame() { const c = state.current; return c ? clamp(Math.floor(scene.currentTime * c.fps + .001), 0, c.frames - 1) : 0; }
 function renderCaseTabs() {
@@ -24,8 +76,8 @@ function renderCaseTabs() {
 }
 function selectCase(id) {
   const c = state.data.cases.find(item => item.id === id); if (!c) return;
-  scene.pause(); state.current = c; $('scene-play').textContent = '▶'; $('scene-play').setAttribute('aria-label', 'Play trajectory');
-  for (const button of document.querySelectorAll('.case-tab')) button.setAttribute('aria-pressed', String(button.dataset.id === id));
+  pauseScene(); state.current = c; state.lastSceneFrame = -1; $('scene-play').textContent = '▶'; $('scene-play').setAttribute('aria-label', 'Play trajectory');
+  for (const button of $('case-tabs').children) button.setAttribute('aria-pressed', String(button.dataset.id === id));
   $('task-label').textContent = c.task;
   $('stage-headline').textContent = c.headline;
   $('stage-description').textContent = c.description;
@@ -71,10 +123,14 @@ function buildMap() {
       const r=c.inPlace?({observe:35,explore:55,revisit:75}[event]):18;
       const x=point[0]+Math.sin(yaw)*r,y=point[1]-Math.cos(yaw)*r;
       const node=svg('g',{class:'atlas-event',role:'button',tabindex:0,'aria-label':`Jump to ${event}`});
-      node.append(svg('line',{x1:point[0],y1:point[1],x2:x,y2:y,stroke:'#ffffffaa','stroke-width':2}),svg('circle',{cx:x,cy:y,r:10,fill:event==='revisit'?'#c04b38':'#446da2',stroke:'#fff','stroke-width':3}),svg('text',{x:x+15,y:y+5,fill:'#fff','font-size':15,'paint-order':'stroke',stroke:'#23344a','stroke-width':4},event==='observe'?'A · Observe':event==='explore'?'Explore':'B · Revisit'));
+      node.append(svg('line',{x1:point[0],y1:point[1],x2:x,y2:y,stroke:'#ffffffaa','stroke-width':2}),svg('circle',{cx:x,cy:y,r:10,fill:event==='revisit'?'#c04b38':'#446da2',stroke:'#fff','stroke-width':3}),svg('title',{},`Jump to ${event}`));
       node.addEventListener('click',()=>jumpEvent(event));node.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();jumpEvent(event);}});geometry.append(node);
     }
-    root.append(svg('g',{id:root.id==='route-map'?'map-camera':'atlas-camera'}));
+    const progress = svg('polyline',{class:'atlas-progress-line',points:''}); geometry.append(progress);
+    const camera=svg('g',{id:root.id==='route-map'?'map-camera':'atlas-camera'});
+    const marker=svg('g');
+    marker.append(svg('circle',{r:20,class:'atlas-camera-pulse'}),svg('path',{d:'M8 0 L70 -40 Q90 0 70 40 Z',fill:'#ffd39b40',stroke:'#ffdfb5','stroke-width':2}),svg('rect',{x:-14,y:-10,width:28,height:20,rx:4,fill:'#fff0d5',stroke:'#14242d','stroke-width':2}),svg('path',{d:'M14 -5 L24 -12 L24 12 L14 5 Z',fill:'#fff0d5',stroke:'#14242d','stroke-width':2}));
+    camera.append(marker); root.append(camera); camera.marker=marker; camera.progress=progress;
   }
   $('path-motion').textContent=c.inPlace?'In-place rotation':'Move & turn';
 }
@@ -106,11 +162,13 @@ function updateScene() {
   $('stage-phase').textContent = query ? 'REVISIT / QUERY' : 'OBSERVATION HISTORY'; $('stage-phase').classList.toggle('query', query);
   const event = query ? 'revisit' : frame >= c.events.explore ? 'explore' : 'observe';
   for (const element of document.querySelectorAll('[data-event]')) element.classList.toggle('active', element.dataset.event === event);
+  if (frame === state.lastSceneFrame) return;
+  state.lastSceneFrame = frame;
   const point = c.mapPoint(pose);
   for (const id of ['map-camera','atlas-camera']) {
-    const group=$(id); group.replaceChildren();
-    const marker=svg('g',{transform:`translate(${point[0]} ${point[1]}) rotate(${pose[3]-90})`});
-    marker.append(svg('path',{d:'M0 0 L62 -40 Q78 0 62 40 Z',fill:'#ffb19e44',stroke:'#ffd1c3','stroke-width':2}),svg('circle',{r:7,fill:'#c04b38',stroke:'#fff','stroke-width':3}));group.append(marker);
+    const group=$(id);
+    group.marker.setAttribute('transform',`translate(${point[0]} ${point[1]}) rotate(${pose[3]-90}) scale(${c.mapScale*2.2})`);
+    group.progress.setAttribute('points',c.poses.slice(0,frame+1).filter((_,i)=>i%3===0||i===frame).map(c.mapPoint).map(p=>p.join(',')).join(' '));
   }
 
   highlightLandmark(pose);
@@ -132,22 +190,23 @@ function finishEventSeek() {
 function modelFor(side) { return state.comparisonGroup.models.find(m => m.id === $(`model-${side}`).value); }
 function comparisonMedia() { return [...['a','b'].map(side=>({video:$(`video-${side}`),model:modelFor(side)})),{video:$('video-gt'),model:state.comparisonGroup.gt}]; }
 function comparisonLimit() { return Math.max(...comparisonMedia().map(({model})=>model.frames/model.fps)); }
-function pauseComparison() { state.comparisonPlaying = false; for (const video of videos) video.pause(); $('compare-play').textContent = '▶ Play all'; }
+function pauseComparison() { state.comparisonRequest++; state.comparisonController?.abort(); state.comparisonPlaying = false; state.comparisonPending = false; for (const video of videos) video.pause(); $('compare-play').textContent = '▶ Play all'; }
+function ensureComparisonLoaded() { for (const video of videos) { if(video.error){video.load();seekVideo(video,state.comparisonTime);}else loadVideo(video); } }
+function comparisonLeader() { return comparisonMedia().reduce((a,b)=>a.model.frames/a.model.fps>b.model.frames/b.model.fps?a:b).video; }
 function updateComparisonMedia(side) {
-  const m=modelFor(side),video=$(`video-${side}`);if(video.getAttribute('src')!==m.video)setVideo(video,m.video,m.poster);$(`endpoint-${side}`).src=m.poster;
+  const m=modelFor(side),video=$(`video-${side}`);if(video.dataset.source!==m.video)setVideo(video,m.video,m.poster,!state.comparisonNear);$(`endpoint-${side}`).src=m.poster;
   $(`fps-${side}`).textContent=`${m.fps} FPS`;
 }
 function updateComparisonTime(time,force=false) {
   state.comparisonTime=clamp(time,0,comparisonLimit());$('compare-scrub').value=String(state.comparisonTime);$('compare-time').textContent=`${state.comparisonTime.toFixed(2)} s`;
   for(const {video,model} of comparisonMedia()) {
     const finalTime=(model.frames-1)/model.fps,target=Math.min(state.comparisonTime,finalTime);
-    if(force || Math.abs(video.currentTime-target)>.12)seekVideo(video,target);
-    if(state.comparisonTime>=finalTime)video.pause();
+    if(force)seekVideo(video,target);
   }
 }
 function configureComparison() {
   pauseComparison();for(const side of ['a','b'])updateComparisonMedia(side);
-  const gt=state.comparisonGroup.gt;if($('video-gt').getAttribute('src')!==gt.video)setVideo($('video-gt'),gt.video,gt.poster);$('endpoint-gt').src=gt.poster;
+  const gt=state.comparisonGroup.gt;if($('video-gt').dataset.source!==gt.video)setVideo($('video-gt'),gt.video,gt.poster,!state.comparisonNear);$('endpoint-gt').src=gt.poster;
   const limit=comparisonLimit();$('compare-scrub').max=String(limit);$('compare-duration').textContent=`${limit.toFixed(2)} s`;updateComparisonTime(0,true);updateEndpointMode();
 }
 function updateEndpointMode() {
@@ -183,25 +242,39 @@ function renderComparison() {
   $('view-comparison-case').addEventListener('click',()=>selectCase(state.comparisonGroup.case_id));selectComparisonCase(state.current.id);
 }
 async function startComparison() {
-  if (state.comparisonPlaying) { pauseComparison(); return; }
+  if (state.comparisonPlaying || state.comparisonPending) { pauseComparison(); return; }
   if (state.comparisonTime >= comparisonLimit() - .04) updateComparisonTime(0, true);
-  state.comparisonPlaying = true; state.comparisonStartedAt = performance.now() - state.comparisonTime * 1000; $('compare-play').textContent = 'Ⅱ Pause all';
-  const results = await Promise.allSettled(videos.map(v => v.play()));
-  if (results.some(r => r.status === 'rejected')) { pauseComparison(); notify('Video playback could not start. Please refresh the page and try again.'); }
+  const request=++state.comparisonRequest,controller=new AbortController();state.comparisonController=controller;
+  state.comparisonPending=true;$('compare-play').textContent='Loading…';ensureComparisonLoaded();
+  try {
+    await Promise.all(videos.map(v=>readyVideo(v,controller.signal)));
+    if(request!==state.comparisonRequest)return;
+    const results=await Promise.allSettled(videos.filter(v=>!v.ended).map(v=>v.play()));
+    if(request!==state.comparisonRequest)return;
+    const failure=results.find(r=>r.status==='rejected');
+    if(failure)throw failure.reason;
+    state.comparisonPending=false;state.comparisonPlaying=true;$('compare-play').textContent='Ⅱ Pause all';notify('');
+  } catch(error) {
+    if(request!==state.comparisonRequest)return;
+    pauseComparison();if(error.name!=='AbortError')notify('Videos are still loading. Please press Play to retry.');
+  }
 }
 function tick(now) {
-  if (now - state.lastUpdate > 40) { state.lastUpdate = now; if (!scene.paused) updateScene(); if (state.comparisonPlaying) { const time = (now - state.comparisonStartedAt) / 1000; updateComparisonTime(time); if (time >= comparisonLimit()) pauseComparison(); } }
+  if (now - state.lastUpdate > 40) { state.lastUpdate = now; if (!scene.paused) updateScene(); if (state.comparisonPlaying) { const leader=comparisonLeader();updateComparisonTime(leader.currentTime);if(leader.ended)pauseComparison(); } }
   requestAnimationFrame(tick);
 }
 async function init() {
-  try { const response = await fetch('cases.json?v=20261019-four-results'); if (!response.ok) throw new Error('Could not load case data'); state.data = await response.json(); renderCaseTabs(); selectCase(state.data.initial_case); renderComparison(); }
+  try { const response = await fetch('cases.json?v=20261104-motion-playback'); if (!response.ok) throw new Error('Could not load case data'); state.data = await response.json(); renderCaseTabs(); selectCase(state.data.initial_case); renderComparison(); }
   catch (error) { notify('The scene data could not be loaded. Please refresh the page.'); console.error(error); return; }
-  setSceneView(false);
+  setSceneView(true);
   $('view-atlas').addEventListener('click',()=>setSceneView(true));
   $('view-first-person').addEventListener('click',()=>setSceneView(false));
-  $('scene-play').addEventListener('click', async () => { try { if (scene.paused) { if (scene.ended) scene.currentTime = 0; await scene.play(); } else scene.pause(); } catch { notify('The scene video could not be played.'); } });
-  scene.addEventListener('play', () => { $('scene-play').textContent = 'Ⅱ'; $('scene-play').setAttribute('aria-label', 'Pause trajectory'); });
-  scene.addEventListener('pause', () => { $('scene-play').textContent = '▶'; $('scene-play').setAttribute('aria-label', 'Play trajectory'); });
+  $('scene-play').addEventListener('click', toggleScene); $('scene-start').addEventListener('click',toggleScene);
+  scene.addEventListener('play', () => { $('scene-play').textContent = 'Ⅱ'; $('scene-play').setAttribute('aria-label', 'Pause trajectory');$('scene-start').hidden=true; });
+  scene.addEventListener('pause', () => { $('scene-play').textContent = '▶'; $('scene-play').setAttribute('aria-label', 'Play trajectory');if(!state.scenePending)$('scene-start').hidden=false; });
+  scene.addEventListener('waiting',()=>{if(!scene.paused)$('scene-buffering').hidden=false;});
+  scene.addEventListener('playing',()=>{$('scene-buffering').hidden=true;});
+  scene.addEventListener('ended',()=>{$('scene-start').hidden=false;});
   for (const event of ['loadedmetadata', 'seeked', 'timeupdate', 'ended']) scene.addEventListener(event, updateScene);
   for (const event of ['seeked', 'loadeddata', 'canplay']) scene.addEventListener(event, finishEventSeek);
   scene.addEventListener('error', () => notify('The scene video could not be loaded.'));
@@ -209,12 +282,17 @@ async function init() {
   $('scene-speed').addEventListener('change', event => scene.playbackRate = Number(event.target.value));
   for (const button of document.querySelectorAll('[data-event]')) button.addEventListener('click', () => jumpEvent(button.dataset.event));
   $('jump-revisit').addEventListener('click', () => jumpEvent('revisit'));
-  $('focus-toggle').addEventListener('click', () => { const active = $('focus-toggle').getAttribute('aria-pressed') === 'true'; $('focus-toggle').setAttribute('aria-pressed', String(!active)); updateScene(); });
+  $('focus-toggle').addEventListener('click', () => { const active = $('focus-toggle').getAttribute('aria-pressed') === 'true'; $('focus-toggle').setAttribute('aria-pressed', String(!active));state.lastSceneFrame=-1;updateScene(); });
   $('compare-play').addEventListener('click', startComparison);
   $('compare-scrub').addEventListener('input', event => { pauseComparison(); updateComparisonTime(Number(event.target.value), true); });
   $('endpoint-mode').addEventListener('change', updateEndpointMode);
-  document.addEventListener('visibilitychange', () => { if (document.hidden) { scene.pause(); pauseComparison(); } });
-  const observer = new IntersectionObserver(entries => { for (const entry of entries) if (!entry.isIntersecting) { if (entry.target.id === 'explore') scene.pause(); else pauseComparison(); } }, {threshold: .08}); observer.observe($('explore')); observer.observe($('compare'));
+  for(const video of videos)video.addEventListener('waiting',()=>{
+    if(!state.comparisonPlaying)return;
+    const time=state.comparisonTime;state.comparisonPlaying=false;for(const v of videos)v.pause();updateComparisonTime(time,true);startComparison();
+  });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { pauseScene(); pauseComparison(); } });
+  const observer = new IntersectionObserver(entries => { for (const entry of entries) if (!entry.isIntersecting) { if (entry.target.id === 'explore') pauseScene(); else pauseComparison(); } }, {threshold: .08}); observer.observe($('explore')); observer.observe($('compare'));
+  new IntersectionObserver(([entry])=>{if(entry.isIntersecting){state.comparisonNear=true;ensureComparisonLoaded();}},{rootMargin:'300px'}).observe($('compare'));
   requestAnimationFrame(tick);
 }
 init();
